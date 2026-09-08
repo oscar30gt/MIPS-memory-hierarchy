@@ -1,6 +1,6 @@
 # MIPS Cache Controller & Memory Hierarchy
 
-A VHDL implementation of a memory hierarchy and cache control unit for a MIPS processor. This project models a complete memory system including a Main Memory (MD), a Direct Access Scratch Memory, and a Cache (MC) acting as the intermediary, communicating via a semi-synchronous bus with arbitration. 
+A VHDL implementation of a memory hierarchy and cache control unit for a MIPS processor. This project models a complete memory system including a Main Memory (MD), a Direct Access Scratch Memory, and a Cache (MC) acting as the intermediary, communicating via a semi-synchronous bus with arbitration.
 
 ## Architecture & Features
 
@@ -12,12 +12,24 @@ The cache controller is driven by an 8-state Mealy Finite State Machine (FSM) th
 * **Bus Arbitration:** Manages access requests dynamically between the Cache Controller and an `IO_Master` peripheral.
 * **Error Handling:** Detects unmapped address accesses and read-only register writes, immediately asserting a `Mem_ERROR` signal to trigger a `Data_abort` exception in the processor.
 
+![FSM Diagram](./docs/img/fsm.png)
+> Mealy 8-state FSM for Cache Controller
+
 ## Advanced Optimizations
 
 To maximize processor performance and minimize wait states, the baseline FSM was extended with two advanced hardware optimizations:
 
 * **Critical Word Forwarding:** When fetching a block from Main Memory, the controller identifies the specific word requested by the processor and forwards it immediately upon arrival on the bus, allowing the MIPS pipeline to resume execution while the remainder of the cache block is loaded in the background.
+
+![Critical Word Forwarding](./docs/img/critical-word.png)
+
+> The optimization results in an execution time of 390 ns compared to 430 ns without it (measured at the point where register r4 receives the result of the final addition). While the performance gain may appear modest on isolated instructions, the improvement becomes significantly more pronounced when handling smaller target words within a block, as it expands the execution window for background arithmetic operations while the rest of the block is still being fetched from main memory—making it ideal for array processing.
+
 * **Basic Lockup-Free Cache:** Write misses are executed in the background. The cache buffers the target address and data, allowing the processor to continue executing non-memory instructions (or cache hits) concurrently with the main memory write-around transfer.
+
+![Lockup-Free Cache](./docs/img/lookup-free.png)
+
+> Although the write operation itself terminates at the exact same timestamp with or without the extension, this optimization completely transforms the execution flow by allowing non-memory instructions and cache hits to run concurrently during the write transfer. By successfully utilizing the idle cycles and the execution gap during the main memory transfer, write-miss penalties are effectively reduced to single-cycle operations, yielding a massive performance enhancement for workloads containing frequent non-dependent instructions.
 
 ## Acknowledgments & Credits
 * **VHDL Implementation & Design:** Developed by Óscar Grimal Torres and Hugo García Sánchez.

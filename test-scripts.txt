@@ -1,0 +1,527 @@
+
+---------------------------------------------------------------------------------------------------
+This file contains a list of test scripts written in pseudo-assembly language.
+Each script is designed to test specific functionalities of a memory system.
+This is for showcase purposes and may not be executable in a real environment.
+To execute these tests, ram files already contain the binary code of the test scripts,
+just uncomment the desired test in both the instruction memory and data memory ram files.
+---------------------------------------------------------------------------------------------------
+
+--- 01_crb_md_test.s ---
+; CrB(MD) TEST
+; Resultado: X ciclos
+.DATA
+00 1
+@4 2
+@8 3
+@12 4
+.CODE
+beq r0, r0, INI
+beq r0, r0, IRQ
+beq r0, r0, ABORT
+beq r0, r0, UNDEF
+INI:
+lw R1, 0(r0)
+FIN:
+beq r0, r0, FIN
+IRQ:
+beq r0, r0, IRQ
+ABORT:
+beq r0, r0, ABORT
+UNDEF:
+beq r0, r0, UNDEF
+
+--- 02_cww_md_test.s ---
+; CwW(MD) TEST
+; Resultado: X ciclos
+.DATA
+00 1
+.CODE
+beq r0, r0, INI
+beq r0, r0, IRQ
+beq r0, r0, ABORT
+beq r0, r0, UNDEF
+INI:
+sw r0, 0(r0)
+FIN:
+beq r0, r0, FIN
+IRQ:
+beq r0, r0, IRQ
+ABORT:
+beq r0, r0, ABORT
+UNDEF:
+beq r0, r0, UNDEF
+
+--- 03_crw_scratch_test.s ---
+; CrW(Scratch) TEST
+; Resultado: X ciclos
+.DATA
+00 0x10000004
+@0x10000004 1 ; Memoria scratch
+.CODE
+beq r0, r0, INI
+beq r0, r0, IRQ
+beq r0, r0, ABORT
+beq r0, r0, UNDEF
+INI:
+lw r1, 0(r0)
+lw r2, 4(r1)
+FIN:
+beq r0, r0, FIN
+RTI:
+beq r0, r0, RTI
+ABORT:
+beq r0, r0, ABORT
+UNDEF:
+beq r0, r0, UNDEF
+
+--- 04_cww_scratch_test.s ---
+; CwW(Scratch) TEST
+; Resultado: X ciclos
+.DATA
+00 0x10000008
+04 1
+.CODE
+beq r0, r0, INI
+beq r0, r0, IRQ
+beq r0, r0, ABORT
+beq r0, r0, UNDEF
+INI:
+lw r1, 0(r0)
+lw r2, 4(r0)
+sw r2, 0(r1)
+FIN:
+beq r0, r0, FIN
+IRQ:
+beq r0, r0, IRQ
+ABORT:
+beq r0, r0, ABORT
+UNDEF:
+beq r0, r0, UNDEF
+
+--- 05_crw_ioreg_test.s ---
+; CrW(IOreg) TEST
+; Resultado: X ciclos
+.DATA
+00 0x01000000
+.CODE
+beq r0, r0, INI
+beq r0, r0, IRQ
+beq r0, r0, ABORT
+beq r0, r0, UNDEF
+INI:
+lw r3, 3(r0)
+FIN:
+beq r0, r0, FIN
+IRQ:
+beq r0, r0, IRQ
+ABORT: 
+lw r1, 0(r0)
+lw r2, 0(r1)
+FIN2:
+beq r0, r0, FIN2
+UNDEF:
+beq r0, r0, UNDEF
+
+--- 06_cww_ioreg_test.s ---
+; CwW(IOreg) TEST
+; Resultado: X ciclos
+.DATA
+00 0x01000000
+.CODE
+beq r0, r0, INI
+beq r0, r0, IRQ
+beq r0, r0, ABORT
+beq r0, r0, UNDEF
+INI:
+lw r1, 0(r0)
+sw r1, 0(r1)
+FIN:
+beq r0, r0, FIN
+IRQ:
+beq r0, r0, IRQ
+ABORT:
+beq r0, r0, ABORT
+UNDEF:
+beq r0, r0, UNDEF
+
+--- 07_read_miss_test.s ---
+; READ MISS TEST
+; Test: Se accede a cuatro bloques diferentes, cada uno ubicado en un set distinto,
+; causando cuatro misses obligatorios en lectura.
+; Resultado esperado: r1=10, r2=20, r3=30, r4=40
+.DATA
+00 10 ; set 0
+@16 20 ; set 1
+@32 30 ; set 2
+@48 40 ; set 3
+.CODE
+beq r0, r0, INI
+beq r0, r0, IRQ
+beq r0, r0, ABORT
+beq r0, r0, UNDEF
+INI:
+lw r1, 0(r0)
+lw r2, 16(r0)
+lw r3, 32(r0)
+lw r4, 48(r0)
+FIN:
+beq r0, r0, FIN
+IRQ:
+beq r0, r0, IRQ
+ABORT:
+beq r0, r0, ABORT
+UNDEF:
+beq r0, r0, UNDEF
+
+--- 08_write_miss_test.s ---
+; WRITE MISS TEST
+; Test: Se realiza un write miss a una direccion que no esta cargada en la MC,
+; lo que provoca un write-around
+; Resultado esperado: @0 (MD) = 22 pero no hay nada en el set 0 de la MC
+.DATA
+@16 22
+.CODE
+beq r0, r0, INI
+beq r0, r0, IRQ
+beq r0, r0, ABORT
+beq r0, r0, UNDEF
+INI:
+lw r1, 16(r0)
+sw r1, 0(r0)
+FIN:
+beq r0, r0, FIN
+IRQ:
+beq r0, r0, IRQ
+ABORT:
+beq r0, r0, ABORT
+UNDEF:
+beq r0, r0, UNDEF
+
+--- 09_read_write_hit_test.s ---
+; READ HIT AND WRITE HIT TEST
+; Test: Se carga un bloque en cache y luego se lee y escribe provocando hits.
+; Resultado esperado: r1 = 33, r2 = 33, r3 = 333, r4 = 33
+.DATA
+00 33 ; tag 0, set 0, word 0
+04 333 ; word 1
+.CODE
+beq r0, r0, INI
+beq r0, r0, IRQ
+beq r0, r0, ABORT
+beq r0, r0, UNDEF
+INI:
+lw r1, 0(r0)
+lw r2, 0(r0)
+lw r3, 4(r0)
+sw r3, 8(r0)
+lw r4, 0(r0)
+FIN:
+beq r0, r0, FIN
+IRQ:
+beq r0, r0, IRQ
+ABORT:
+beq r0, r0, ABORT
+UNDEF:
+beq r0, r0, UNDEF
+
+--- 10_clean_replacement_test.s ---
+; CLEAN REPLACEMENT TEST
+; Test: Se llenan ambas vias con dos bloques limpios, luego se accede a un tercer bloque
+; que expulsa al primer bloque limpio sin escribirlo a memoria.
+; Resultado esperado: r1=1, r2=2, r3=3
+.DATA
+00 1 ; set 0, tag 0
+@64 2 ; set 0, tag 1
+@128 3 ; set 0, tag 2
+.CODE
+beq r0, r0, INI
+beq r0, r0, IRQ
+beq r0, r0, ABORT
+beq r0, r0, UNDEF
+INI:
+lw r1, 0(r0)
+lw r2, 64(r0)
+lw r3, 128(r0)
+FIN:
+beq r0, r0, FIN
+IRQ:
+beq r0, r0, IRQ
+ABORT:
+beq r0, r0, ABORT
+UNDEF:
+beq r0, r0, UNDEF
+
+--- 11_dirty_replacement_test.s ---
+; DIRTY REPLACEMENT TEST
+; Test: Se escribe en un bloque en cache y luego se reemplaza. Se vuelve a cargar
+; para comprobar que el valor modificado se ha escrito correctamente a memoria.
+; Resultado esperado: r5=55
+.DATA
+00 0 ; set 0, tag 0, word 0
+04 55 ; set 0, tag 0, word 1
+@64 2 ; set 0, tag 1, word 0
+@128 3 ; set 0, tag 2, word 0
+.CODE
+beq r0, r0, INI
+beq r0, r0, IRQ
+beq r0, r0, ABORT
+beq r0, r0, UNDEF
+INI:
+lw r1, 0(r0)
+lw r2, 64(r0)
+lw r3, 4(r0)
+sw r3, 0(r0)
+lw r4, 128(r0)
+lw r5, 0(r0)
+FIN:
+beq r0, r0, FIN
+IRQ:
+beq r0, r0, IRQ
+ABORT:
+beq r0, r0, ABORT
+UNDEF:
+beq r0, r0, UNDEF
+
+--- 12_md_scratch_rw_test.s ---
+; MD SCRATCH READ/WRITE TEST
+; Resultado esperado: r3 = 66 
+.DATA
+00 0x10000004 ; MD Scratch base addr.
+04 66 ; Valor a escribir en MD Scratch
+.CODE
+beq r0, r0, INI
+beq r0, r0, IRQ
+beq r0, r0, ABORT
+beq r0, r0, UNDEF
+INI:
+lw r1, 0(r0)
+lw r2, 4(r0)
+sw r2, 0(r1)
+lw r3, 0(r1)
+FIN:
+beq r0, r0, FIN
+IRQ:
+beq r0, r0, IRQ
+ABORT:
+beq r0, r0, ABORT
+UNDEF:
+beq r0, r0, UNDEF
+
+--- 13_counters_test.s ---
+; COUNTERS TEST
+; Resultado esperado: cont_m = 3, cont_r = 5, cont_w = 1, cont_cb = 1
+.DATA
+.CODE
+beq r0, r0, INI
+beq r0, r0, IRQ
+beq r0, r0, ABORT
+beq r0, r0, UNDEF
+INI:
+lw r1, 0(r0)
+lw r1, 0(r0)
+lw r1, 64(r0)
+lw r1, 4(r0)
+sw r1, 4(r0)
+lw r1, 128(r0)
+FIN:
+beq r0, r0, FIN
+IRQ:
+beq r0, r0, IRQ
+ABORT:
+beq r0, r0, ABORT
+UNDEF:
+beq r0, r0, UNDEF
+
+--- 14_unmapped_address_test.s ---
+; UNMAPPED ADDRESS ACCESS TEST
+; Resultado esperado: r8 = 0x0BADADD0 
+.DATA
+00 0x0BADADD0 ; unmapped address
+04 0x01000000 ; Addr_Error_Reg
+.CODE
+beq r0, r0, INI
+beq r0, r0, IRQ
+beq r0, r0, ABORT
+beq r0, r0, UNDEF
+INI:
+lw r1, 0(r0)
+lw r2, 4(r0)
+lw r31, 0(r1)
+FIN:
+beq r0, r0, FIN
+IRQ:
+beq r0, r0, IRQ
+ABORT:
+lw r8, 0(r2)
+beq r0, r0, FIN
+UNDEF:
+beq r0, r0, UNDEF
+
+--- 15_write_attempt_readonly_test.s ---
+; WRITE ATTEMPT TO READ-ONLY ADDRESS TEST
+; Resultado esperado: r8 = 0x01000000 
+.DATA
+00 0x01000000 ; Addr_Error_Reg
+.CODE
+beq r0, r0, INI
+beq r0, r0, IRQ
+beq r0, r0, ABORT
+beq r0, r0, UNDEF
+INI:
+lw r1, 0(r0)
+sw r0, 0(r1)
+FIN:
+beq r0, r0, FIN
+IRQ:
+beq r0, r0, IRQ
+ABORT:
+lw r8, 0(r1)
+beq r0, r0, FIN
+UNDEF:
+beq r0, r0, UNDEF
+
+--- 16_integracion_a_test.s ---
+; TEST DE INTEGRACION A: MUCHOS HITS
+; Resultado esperado: @40 = 360
+.DATA
+00 1 
+04 2 
+08 3 
+@12 4 
+@16 5 
+@20 6 
+@24 7 
+@28 8 
+@32 10
+@36 1
+@40 0
+.CODE
+beq r0, r0, INI
+beq r0, r0, IRQ
+beq r0, r0, ABORT
+beq r0, r0, UNDEF
+INI:
+lw r20, 32(r0)
+lw r21, 36(r0)
+add r22, r0, r0
+loop:
+lw r1, 0(r0)
+lw r2, 4(r0)
+lw r3, 8(r0)
+lw r4, 12(r0)
+lw r5, 16(r0)
+lw r6, 20(r0)
+lw r7, 24(r0)
+lw r8, 28(r0)
+lw r9, 40(r0)
+add r9, r9, r1
+add r9, r9, r2
+add r9, r9, r3
+add r9, r9, r4
+add r9, r9, r5
+add r9, r9, r6
+add r9, r9, r7
+add r9, r9, r8
+sw r9, 40(r0)
+add r22, r22, r21
+beq r22, r20, FIN
+beq r0, r0, loop
+FIN:
+beq r0, r0, FIN
+IRQ:
+beq r0, r0, IRQ
+ABORT:
+beq r0, r0, ABORT
+UNDEF:
+beq r0, r0, UNDEF
+
+--- 17_integracion_b_test.s ---
+; TEST DE INTEGRACION B: MUCHOS MISSES
+; Resultado esperado: @204 = 360 
+.DATA
+00 1 
+@64 2 
+@128 3 
+@192 4 
+@256 5 
+@320 6 
+@384 7 
+@448 8 
+@196 10
+@200 1
+@204 0
+.CODE
+beq r0, r0, INI
+beq r0, r0, IRQ
+beq r0, r0, ABORT
+beq r0, r0, UNDEF
+INI:
+lw r20, 196(r0)
+lw r21, 200(r0)
+add r22, r0, r0
+loop:
+lw r1, 0(r0)
+lw r2, 64(r0)
+lw r3, 128(r0)
+lw r4, 192(r0)
+lw r5, 256(r0)
+lw r6, 320(r0)
+lw r7, 384(r0)
+lw r8, 448(r0)
+lw r9, 204(r0)
+add r9, r9, r1
+add r9, r9, r2
+add r9, r9, r3
+add r9, r9, r4
+add r9, r9, r5
+add r9, r9, r6
+add r9, r9, r7
+add r9, r9, r8
+sw r9, 204(r0)
+add r22, r22, r21
+beq r22, r20, FIN
+beq r0, r0, loop
+FIN:
+beq r0, r0, FIN
+IRQ:
+beq r0, r0, IRQ
+ABORT:
+beq r0, r0, ABORT
+UNDEF:
+beq r0, r0, UNDEF
+
+--- 18_ethical_hacking_test.s ---
+; ETHICAL HACKING: DIRTY BLOCK FLOODING ATTACK
+; Resultado esperado: 1 writeback sucio por cada 3 accesos.
+.DATA
+00 0x00000037
+04 0x00000037
+@64 0x00000042
+@128 0x0000004D
+.CODE
+beq r0, r0, INI
+beq r0, r0, IRQ
+beq r0, r0, ABORT
+beq r0, r0, UNDEF
+INI:
+ATTACK_LOOP:
+lw r1, 0(r0)
+lw r2, 64(r0)
+lw r3, 128(r0)
+lw r4, 4(r0)
+sw r4, 0(r0)
+lw r5, 64(r0)
+lw r6, 64(r0)
+sw r6, 64(r0)
+lw r7, 128(r0)
+lw r8, 128(r0)
+sw r8, 128(r0)
+lw r9, 0(r0)
+beq r0, r0, ATTACK_LOOP
+IRQ: 
+beq r0, r0, IRQ
+ABORT: 
+beq r0, r0, ABORT
+UNDEF:
+beq r0, r0, UNDEF
