@@ -19,10 +19,6 @@ To maximize processor performance and minimize wait states, the baseline FSM was
 * **Critical Word Forwarding:** When fetching a block from Main Memory, the controller identifies the specific word requested by the processor and forwards it immediately upon arrival on the bus, allowing the MIPS pipeline to resume execution while the remainder of the cache block is loaded in the background.
 * **Basic Lockup-Free Cache:** Write misses are executed in the background. The cache buffers the target address and data, allowing the processor to continue executing non-memory instructions (or cache hits) concurrently with the main memory write-around transfer.
 
-## Vulnerability Analysis 
-
-The project includes an *Ethical Hacking* evaluation demonstrating a "Dirty Block Flooding Attack". By forcing a continuous loop of write-hits (marking blocks dirty) and immediate misses within the same cache set, the exploit forces continuous write-backs. This successfully saturates the bus, degrading the `IO_Master` peripheral's access rate by roughly 3x.
-
 ## Acknowledgments & Credits
 * **VHDL Implementation & Design:** Developed by Óscar Grimal Torres and Hugo García Sánchez.
 * **Base Skeleton:** Provided by the Department of Computer Engineering (Universidad de Zaragoza) for academic purposes.
